@@ -4,8 +4,10 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import org.jerry.ecommerce.entity.Address;
 
+import java.util.UUID;
+
 public record CustomerRequest(
-        String id,
+        UUID id,
         @NotNull(message = "First name is required")
         String firstName,
         @NotNull(message = "Last name is required")
