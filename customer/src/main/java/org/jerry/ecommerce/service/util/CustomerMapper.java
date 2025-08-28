@@ -11,12 +11,18 @@ import java.util.UUID;
 public class CustomerMapper {
 
     public Customer toCustomer(@Valid CustomerRequest customerRequest) {
-        UUID uuid = UUID.randomUUID();
-        return Customer.builder()
-                .id(uuid)
+        Customer customer = Customer.builder()
                 .firstName(customerRequest.firstName())
                 .lastName(customerRequest.lastName())
                 .email(customerRequest.email())
+                .addressId(customerRequest.address().getId())
                 .build();
+        if (customerRequest.id() == null) {
+            UUID uuid = UUID.randomUUID();
+            customer.setId(uuid);
+        } else {
+            customer.setId(customerRequest.id());
+        }
+        return customer;
     }
 }

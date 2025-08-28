@@ -13,6 +13,20 @@ services:
     networks:
       - microservices-network
     restart: unless-stopped
+  postgres-jerry:
+    image: postgres:latest
+    container_name: postgres-jerry
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgres_jerry
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata-jerry:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+    restart: unless-stopped
   mail-dev:
     image: maildev/maildev:latest
     container_name: maildev
@@ -29,4 +43,6 @@ networks:
 
 volumes:
   pgdata:
+    driver: local
+  pgdata-jerry:
     driver: local
