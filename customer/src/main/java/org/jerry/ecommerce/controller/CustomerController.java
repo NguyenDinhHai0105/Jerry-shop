@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import org.jerry.ecommerce.dto.response.CustomerResponse;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/customers")
@@ -35,4 +36,23 @@ public class CustomerController {
         List<CustomerResponse> customers = customerService.getAllCustomersWithAddress();
         return ResponseEntity.ok(customers);
     }
+
+    @GetMapping("/exists/{customerId}")
+    public ResponseEntity<Boolean> existsById(@PathVariable UUID customerId) {
+        Boolean exists = customerService.isCustomerExists(customerId);
+        return ResponseEntity.ok(exists);
+    }
+
+    @GetMapping("/{customerId}")
+    public ResponseEntity<CustomerResponse> getCustomerById(@PathVariable UUID customerId) {
+        CustomerResponse customer = customerService.getCustomerById(customerId);
+        return ResponseEntity.ok(customer);
+    }
+
+    @DeleteMapping("/{customerId}")
+    public ResponseEntity<String> deleteCustomer(@PathVariable UUID customerId) {
+        customerService.deleteCustomer(customerId);
+        return ResponseEntity.ok("Customer deleted successfully");
+    }
 }
+

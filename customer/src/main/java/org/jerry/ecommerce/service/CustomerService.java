@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class CustomerService {
@@ -28,7 +29,7 @@ public class CustomerService {
     private final AddressMapper addressMapper;
     private final JPAQueryFactory queryFactory;
 
-    public CustomerService(CustomerRepository customerRepository, AddressRepository addressRepository, CustomerMapper customerMapper, AddressMapper addressMapper, EntityManager entityManager1, EntityManager entityManager) {
+    public CustomerService(CustomerRepository customerRepository, AddressRepository addressRepository, CustomerMapper customerMapper, AddressMapper addressMapper, EntityManager entityManager) {
         this.customerRepository = customerRepository;
         this.addressRepository = addressRepository;
         this.customerMapper = customerMapper;
@@ -59,20 +60,52 @@ public class CustomerService {
         QCustomer customer = QCustomer.customer;
         QAddress address = QAddress.address;
         List<Tuple> tuples = queryFactory
-            .select(customer.id, customer.firstName, customer.lastName, customer.email, address)
-            .from(customer)
-            .leftJoin(address).on(customer.addressId.eq(address.id))
-            .fetch();
+                .select(customer.id, customer.firstName, customer.lastName, customer.email, address)
+                .from(customer)
+                .leftJoin(address).on(customer.addressId.eq(address.id))
+                .fetch();
         List<CustomerResponse> responses = new ArrayList<>();
+        if (tuples.isEmpty()) {
+            return responses;
+        }
         for (Tuple tuple : tuples) {
             responses.add(new CustomerResponse(
-                tuple.get(customer.id),
-                tuple.get(customer.firstName),
-                tuple.get(customer.lastName),
-                tuple.get(customer.email),
-                tuple.get(address)
+                    tuple.get(customer.id),
+                    tuple.get(customer.firstName),
+                    tuple.get(customer.lastName),
+                    tuple.get(customer.email),
+                    tuple.get(address)
             ));
         }
         return responses;
+    }
+
+    public Boolean isCustomerExists(UUID customerId) {
+        return customerRepository.existsById(customerId);
+    }
+
+    public CustomerResponse getCustomerById(UUID customerId) {
+        return customerRepository.findById(customerId)
+                .map(customer -> {
+                    var address = addressRepository.findById(customer.getAddressId())
+                            .orElseThrow(() -> new NotFoundException("Address not found with id: " + customer.getAddressId()));
+                    return new CustomerResponse(
+                            customer.getId(),
+                            customer.getFirstName(),
+                            customer.getLastName(),
+                            customer.getEmail(),
+                            address
+                    );
+                })
+                .orElseThrow(() -> new NotFoundException("Customer not found with id: " + customerId));
+    }
+
+    public void deleteCustomer(UUID customerId) {
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new NotFoundException("Customer not found with id: " + customerId));
+        // Delete associated address first
+        addressRepository.deleteById(customer.getAddressId());
+        // Delete the customer
+        customerRepository.deleteById(customerId);
     }
 }
