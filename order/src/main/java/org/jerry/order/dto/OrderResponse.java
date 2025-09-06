@@ -15,6 +15,6 @@ public record OrderResponse(
         UUID customerId,
         LocalDateTime createdAt,
         LocalDateTime lastModifiedAt,
-        List<OrderLineResponse> orderLines
+        List<OrderLineResponse> product
 ) {
 }

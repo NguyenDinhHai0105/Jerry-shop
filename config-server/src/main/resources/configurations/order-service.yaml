@@ -19,3 +19,11 @@ spring:
 
 server:
   port: 8092
+
+feign:
+  client:
+    config:
+      customer:
+        url: http://localhost:8090/api/v1/customers
+      product:
+        url: http://localhost:8091/api/v1/products

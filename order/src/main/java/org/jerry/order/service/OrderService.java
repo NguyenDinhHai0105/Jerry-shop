@@ -1,12 +1,17 @@
 package org.jerry.order.service;
 
 import lombok.RequiredArgsConstructor;
+import org.jerry.order.client.customer.CustomerClient;
+import org.jerry.order.client.product.ProductClient;
 import org.jerry.order.dto.OrderLineResponse;
 import org.jerry.order.dto.OrderRequest;
 import org.jerry.order.dto.OrderResponse;
 import org.jerry.order.entity.Order;
 import org.jerry.order.entity.OrderLine;
+import org.jerry.order.exception.BusinessException;
 import org.jerry.order.exception.OrderNotFoundException;
+import org.jerry.order.kafka.OrderProducer;
+import org.jerry.order.kafka.message.OrderConfirmationMessage;
 import org.jerry.order.repository.OrderLineRepository;
 import org.jerry.order.repository.OrderRepository;
 import org.jerry.order.util.OrderLineMapper;
@@ -26,17 +31,26 @@ public class OrderService {
     private final OrderLineRepository orderLineRepository;
     private final OrderMapper orderMapper;
     private final OrderLineMapper orderLineMapper;
+    private final CustomerClient customerClient;
+    private final ProductClient productClient;
+    private final OrderProducer orderProducer;
 
     @Transactional
     public OrderResponse createOrder(OrderRequest orderRequest) {
+        // validate customer
+        var customer = customerClient.getCustomerById(orderRequest.customerId())
+                .orElseThrow(() -> new BusinessException("Customer not found with id: " + orderRequest.customerId()));
+
+        var purchaseProducts = productClient.purchaseProducts(orderRequest.products());
+
         // Create and save order
         Order order = orderMapper.toEntity(orderRequest);
         Order savedOrder = orderRepository.save(order);
 
         // Create and save order lines
         List<OrderLine> orderLines = null;
-        if (orderRequest.orderLines() != null && !orderRequest.orderLines().isEmpty()) {
-            orderLines = orderRequest.orderLines().stream()
+        if (orderRequest.products() != null && !orderRequest.products().isEmpty()) {
+            orderLines = orderRequest.products().stream()
                     .map(lineRequest -> orderLineMapper.toEntity(lineRequest, savedOrder.getId()))
                     .collect(Collectors.toList());
             orderLineRepository.saveAll(orderLines);
@@ -48,6 +62,15 @@ public class OrderService {
                 orderLines.stream()
                         .map(orderLineMapper::toResponse)
                         .collect(Collectors.toList()) : null;
+
+        orderProducer.sendOrderConfirmation("ORDER_CONFIRMATION",
+                new OrderConfirmationMessage(
+                        orderRequest.reference(),
+                        orderRequest.totalAmount(),
+                        orderRequest.paymentMethod(),
+                        customer,
+                        purchaseProducts
+                ));
 
         return new OrderResponse(
                 orderResponse.id(),
@@ -111,12 +134,12 @@ public class OrderService {
         Order updatedOrder = orderRepository.save(existingOrder);
 
         // Update order lines if provided
-        if (orderRequest.orderLines() != null) {
+        if (orderRequest.products() != null) {
             // Delete existing order lines
             orderLineRepository.deleteAll(orderLineRepository.findByOrderId(orderId));
 
             // Create new order lines
-            List<OrderLine> newOrderLines = orderRequest.orderLines().stream()
+            List<OrderLine> newOrderLines = orderRequest.products().stream()
                     .map(lineRequest -> orderLineMapper.toEntity(lineRequest, orderId))
                     .collect(Collectors.toList());
             orderLineRepository.saveAll(newOrderLines);
