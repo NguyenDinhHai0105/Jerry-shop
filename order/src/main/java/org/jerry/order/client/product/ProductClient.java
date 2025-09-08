@@ -10,7 +10,7 @@ import java.util.List;
 
 @FeignClient(
         name = "product-service",
-        url = "${feign.client.config.product.url}"
+        url = "${feign.client.config.product.url:_}"
 )
 public interface ProductClient {
     @PostMapping("/purchase")

@@ -1,13 +1,20 @@
 package org.jerry.order.service;
 
+import com.querydsl.core.Tuple;
+import com.querydsl.jpa.impl.JPAQuery;
+import feign.FeignException;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.jerry.order.client.customer.CustomerClient;
 import org.jerry.order.client.product.ProductClient;
 import org.jerry.order.dto.OrderLineResponse;
 import org.jerry.order.dto.OrderRequest;
 import org.jerry.order.dto.OrderResponse;
+import org.jerry.order.dto.product.PurchaseResponse;
 import org.jerry.order.entity.Order;
 import org.jerry.order.entity.OrderLine;
+import org.jerry.order.entity.QOrder;
+import org.jerry.order.entity.QOrderLine;
 import org.jerry.order.exception.BusinessException;
 import org.jerry.order.exception.OrderNotFoundException;
 import org.jerry.order.kafka.OrderProducer;
@@ -20,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -34,14 +42,13 @@ public class OrderService {
     private final CustomerClient customerClient;
     private final ProductClient productClient;
     private final OrderProducer orderProducer;
+    private final EntityManager entityManager;
 
     @Transactional
     public OrderResponse createOrder(OrderRequest orderRequest) {
         // validate customer
         var customer = customerClient.getCustomerById(orderRequest.customerId())
                 .orElseThrow(() -> new BusinessException("Customer not found with id: " + orderRequest.customerId()));
-
-        var purchaseProducts = productClient.purchaseProducts(orderRequest.products());
 
         // Create and save order
         Order order = orderMapper.toEntity(orderRequest);
@@ -54,6 +61,14 @@ public class OrderService {
                     .map(lineRequest -> orderLineMapper.toEntity(lineRequest, savedOrder.getId()))
                     .collect(Collectors.toList());
             orderLineRepository.saveAll(orderLines);
+        }
+
+        List<PurchaseResponse> purchaseProducts;
+        try {
+            purchaseProducts = productClient.purchaseProducts(orderRequest.products());
+        } catch (FeignException e) {
+            String errorMessage = e.getMessage(); // hoặc parse response body
+            throw new BusinessException("Failed to purchase products: " + errorMessage);
         }
 
         // Convert to response
@@ -69,7 +84,7 @@ public class OrderService {
                         orderRequest.totalAmount(),
                         orderRequest.paymentMethod(),
                         customer,
-                        purchaseProducts
+                        purchaseProducts.stream().toList()
                 ));
 
         return new OrderResponse(
@@ -85,11 +100,30 @@ public class OrderService {
     }
 
     public OrderResponse getOrderById(UUID orderId) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new OrderNotFoundException("Order not found with id: " + orderId));
+        JPAQuery<?> query = new JPAQuery<>(entityManager);
+        QOrder qOrder = QOrder.order;
+        QOrderLine qOrderLine = QOrderLine.orderLine;
 
-        List<OrderLine> orderLines = orderLineRepository.findByOrderId(orderId);
-        return getOrderResponse(order, orderLines);
+        List<Tuple> results = query.select(qOrder, qOrderLine)
+                .from(qOrder)
+                .leftJoin(qOrderLine)
+                .on(qOrder.id.eq(qOrderLine.orderId))
+                .where(qOrder.id.eq(orderId))
+                .fetch();
+
+        return results.stream()
+                .collect(Collectors.groupingBy(
+                        tuple -> tuple.get(qOrder),
+                        Collectors.mapping(
+                                tuple -> tuple.get(qOrderLine),
+                                Collectors.filtering(Objects::nonNull, Collectors.toList())
+                        )
+                ))
+                .entrySet()
+                .stream()
+                .map(entry -> getOrderResponse(entry.getKey(), entry.getValue()))
+                .findFirst()
+                .orElseThrow(() -> new OrderNotFoundException("Order not found with id: " + orderId));
     }
 
     private OrderResponse getOrderResponse(Order order, List<OrderLine> orderLines) {
@@ -111,12 +145,28 @@ public class OrderService {
     }
 
     public List<OrderResponse> getAllOrders() {
-        List<Order> orders = orderRepository.findAll();
-        return orders.stream()
-                .map(order -> {
-                    List<OrderLine> orderLines = orderLineRepository.findByOrderId(order.getId());
-                    return getOrderResponse(order, orderLines);
-                })
+        JPAQuery<?> query = new JPAQuery<>(entityManager);
+        // You can add custom query logic here if needed using QueryDSL
+        QOrder qOrder = QOrder.order;
+        QOrderLine qOrderLine = QOrderLine.orderLine;
+
+        List<Tuple> results = query.select(qOrder, qOrderLine)
+                .from(qOrder)
+                .leftJoin(qOrderLine)
+                .on(qOrder.id.eq(qOrderLine.orderId))
+                .fetch();
+
+        return results.stream()
+                .collect(Collectors.groupingBy(
+                        tuple -> tuple.get(qOrder),
+                        Collectors.mapping(
+                                tuple -> tuple.get(qOrderLine),
+                                Collectors.filtering(Objects::nonNull, Collectors.toList())
+                        )
+                ))
+                .entrySet()
+                .stream()
+                .map(entry -> getOrderResponse(entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
     }
 
