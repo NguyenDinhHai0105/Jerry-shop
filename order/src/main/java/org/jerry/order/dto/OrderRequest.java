@@ -3,7 +3,7 @@ package org.jerry.order.dto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import org.jerry.order.dto.product.PurchaseRequest;
+import org.jerry.common.dto.request.PurchaseRequest;
 import org.jerry.order.entity.PaymentMethod;
 
 import java.math.BigDecimal;

@@ -3,3 +3,21 @@ spring:
       import: optional:configserver:http://localhost:8888
   application:
     name: product-service
+  kafka:
+    bootstrap-servers: 192.168.1.11:9092
+    consumer:
+      group-id: product-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+    producer:
+      key-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    listener:
+      missing-topics-fatal: false
+
+topic:
+  order:
+    create: ORDER_CREATE_TOPIC

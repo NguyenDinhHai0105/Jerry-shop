@@ -64,7 +64,7 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
-    public List<ProductPurchaseResponse> purchaseProducts(List<ProductPurchaseRequest> requests) {
+    public List<ProductPurchaseResponse> purchaseProducts(UUID orderId, List<ProductPurchaseRequest> requests) {
         var productIds = requests
                 .stream()
                 .map(ProductPurchaseRequest::getProductId)

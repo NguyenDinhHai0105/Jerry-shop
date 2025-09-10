@@ -6,8 +6,10 @@ import org.jerry.order.entity.PaymentMethod;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 
 public record OrderConfirmationMessage(
+        UUID orderId,
         String orderReference,
         BigDecimal totalAmount,
         PaymentMethod paymentMethod,

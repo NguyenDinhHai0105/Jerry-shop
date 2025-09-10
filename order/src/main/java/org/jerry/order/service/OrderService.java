@@ -2,9 +2,9 @@ package org.jerry.order.service;
 
 import com.querydsl.core.Tuple;
 import com.querydsl.jpa.impl.JPAQuery;
-import feign.FeignException;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import org.jerry.common.dto.order.OrderCreateMessage;
 import org.jerry.order.client.customer.CustomerClient;
 import org.jerry.order.client.product.ProductClient;
 import org.jerry.order.dto.OrderLineResponse;
@@ -23,6 +23,7 @@ import org.jerry.order.repository.OrderLineRepository;
 import org.jerry.order.repository.OrderRepository;
 import org.jerry.order.util.OrderLineMapper;
 import org.jerry.order.util.OrderMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +35,9 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class OrderService {
+
+    @Value("${topic.order.created}")
+    private String orderCreatedTopic;
 
     private final OrderRepository orderRepository;
     private final OrderLineRepository orderLineRepository;
@@ -52,6 +56,9 @@ public class OrderService {
 
         // Create and save order
         Order order = orderMapper.toEntity(orderRequest);
+
+        List<PurchaseResponse> purchaseProducts;
+        orderProducer.sendOrderCreated(orderCreatedTopic, new OrderCreateMessage(order.getId(), orderRequest.products()));
         Order savedOrder = orderRepository.save(order);
 
         // Create and save order lines
@@ -63,14 +70,6 @@ public class OrderService {
             orderLineRepository.saveAll(orderLines);
         }
 
-        List<PurchaseResponse> purchaseProducts;
-        try {
-            purchaseProducts = productClient.purchaseProducts(orderRequest.products());
-        } catch (FeignException e) {
-            String errorMessage = e.getMessage(); // hoặc parse response body
-            throw new BusinessException("Failed to purchase products: " + errorMessage);
-        }
-
         // Convert to response
         OrderResponse orderResponse = orderMapper.toResponse(savedOrder);
         List<OrderLineResponse> orderLineResponses = orderLines != null ?
@@ -80,11 +79,12 @@ public class OrderService {
 
         orderProducer.sendOrderConfirmation("ORDER_CONFIRMATION",
                 new OrderConfirmationMessage(
+                        orderResponse.id(),
                         orderRequest.reference(),
                         orderRequest.totalAmount(),
                         orderRequest.paymentMethod(),
                         customer,
-                        purchaseProducts.stream().toList()
+                        null
                 ));
 
         return new OrderResponse(

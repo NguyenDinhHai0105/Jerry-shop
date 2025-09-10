@@ -1,6 +1,6 @@
 package org.jerry.order.util;
 
-import org.jerry.order.dto.product.PurchaseRequest;
+import org.jerry.common.dto.request.PurchaseRequest;
 import org.jerry.order.dto.OrderLineResponse;
 import org.jerry.order.entity.OrderLine;
 import org.springframework.stereotype.Component;
@@ -14,8 +14,8 @@ public class OrderLineMapper {
         OrderLine orderLine = new OrderLine();
         orderLine.setId(UUID.randomUUID());
         orderLine.setOrderId(orderId);
-        orderLine.setProductId(request.productId());
-        orderLine.setQuantity(request.quantity());
+        orderLine.setProductId(request.getProductId());
+        orderLine.setQuantity(request.getQuantity());
         return orderLine;
     }
 

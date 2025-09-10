@@ -8,10 +8,15 @@ spring:
     consumer:
       group-id: order-service-group
       auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      key-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
     producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      key-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
     listener:
       missing-topics-fatal: false
+topic:
+  order:
+    created: ORDER_CREATE_TOPIC
+    cancelled: order-cancelled
+    completed: order-completed
