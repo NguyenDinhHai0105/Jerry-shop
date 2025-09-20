@@ -1,4 +1,4 @@
-package org.jerry.order.dto.product;
+package org.jerry.common.dto.product;
 
 import java.math.BigDecimal;
 import java.util.UUID;

@@ -12,12 +12,9 @@ public class PaymentMapper {
 
     public Payment toEntity(PaymentRequest request) {
         Payment payment = new Payment();
-        payment.setAmount(request.amount());
+        payment.setAmount(request.totalAmount());
         payment.setPaymentMethod(request.paymentMethod());
-        if (request.orderId() != null) {
-            // Create a deterministic UUID from orderId or use a random UUID
-            payment.setOrderId(UUID.randomUUID()); // You might want to implement proper orderId to UUID mapping
-        }
+        payment.setOrderId(request.orderId());
         return payment;
     }
 
@@ -35,7 +32,7 @@ public class PaymentMapper {
     }
 
     public void updateEntity(Payment payment, PaymentRequest request) {
-        payment.setAmount(request.amount());
+        payment.setAmount(request.totalAmount());
         payment.setPaymentMethod(request.paymentMethod());
         if (request.orderId() != null) {
             payment.setOrderId(UUID.randomUUID()); // You might want to implement proper orderId to UUID mapping

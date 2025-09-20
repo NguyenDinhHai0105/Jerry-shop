@@ -1,22 +1,19 @@
 spring:
   application:
-    name: order-service
+    name: payment-service
   config:
     import: optional:configserver:http://localhost:8888
   kafka:
     bootstrap-servers: 192.168.1.48:9092
     consumer:
-      group-id: order-service-group
+      group-id: payment-service-group
       auto-offset-reset: earliest
       key-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
     producer:
       key-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
     listener:
       missing-topics-fatal: false
-topic:
-  order:
-    created: ORDER_CREATE_TOPIC
-    cancelled: order-cancelled
-    completed: order-completed

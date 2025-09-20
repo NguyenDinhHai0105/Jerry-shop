@@ -1,8 +1,8 @@
-package org.jerry.order.kafka.message;
+package org.jerry.common.dto.order;
 
-import org.jerry.order.client.customer.CustomerResponse;
-import org.jerry.order.dto.product.PurchaseResponse;
-import org.jerry.order.entity.PaymentMethod;
+import org.jerry.common.constant.PaymentMethod;
+import org.jerry.common.dto.customer.CustomerResponse;
+import org.jerry.common.dto.product.PurchaseResponse;
 
 import java.math.BigDecimal;
 import java.util.List;

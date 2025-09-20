@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jerry.common.dto.order.OrderCreateMessage;
 import org.jerry.common.service.KafkaService;
-import org.jerry.order.kafka.message.OrderConfirmationMessage;
+import org.jerry.common.dto.order.OrderConfirmationMessage;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;

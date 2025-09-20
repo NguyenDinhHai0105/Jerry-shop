@@ -1,6 +1,8 @@
 package org.jerry.payment.service;
 
 import lombok.RequiredArgsConstructor;
+import org.jerry.common.dto.notification.PaymentNotificationRequest;
+import org.jerry.common.service.KafkaService;
 import org.jerry.payment.dto.PaymentRequest;
 import org.jerry.payment.dto.PaymentResponse;
 import org.jerry.payment.entity.Payment;
@@ -19,10 +21,21 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final PaymentMapper paymentMapper;
+    private final KafkaService<UUID, PaymentNotificationRequest> kafkaService;
 
     public PaymentResponse createPayment(PaymentRequest request) {
         Payment payment = paymentMapper.toEntity(request);
         Payment savedPayment = paymentRepository.save(payment);
+        // Send payment notification
+        PaymentNotificationRequest notificationRequest = PaymentNotificationRequest.builder()
+                .orderReference(request.orderReference())
+                .amount(request.totalAmount())
+                .paymentMethod(request.paymentMethod())
+                .customerFirstName(request.customer().firstName())
+                .customerLastName(request.customer().lastName())
+                .customerEmail(request.customer().email())
+                .build();
+        kafkaService.sendMessage("NOTIFICATION_PAYMENT_TOPIC", savedPayment.getOrderId(), notificationRequest);
         return paymentMapper.toResponse(savedPayment);
     }
 

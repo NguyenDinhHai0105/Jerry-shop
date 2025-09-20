@@ -1,4 +1,4 @@
-package org.jerry.order.client.customer;
+package org.jerry.common.dto.customer;
 
 import java.util.UUID;
 

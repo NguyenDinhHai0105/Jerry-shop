@@ -1,4 +1,4 @@
-package org.jerry.payment.entity;
+package org.jerry.common.constant;
 
 public enum PaymentMethod {
     PAYPAL,

@@ -1,6 +1,6 @@
 package org.jerry.order.dto;
 
-import org.jerry.order.entity.PaymentMethod;
+import org.jerry.common.constant.PaymentMethod;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

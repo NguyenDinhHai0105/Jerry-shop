@@ -10,7 +10,7 @@ import org.jerry.order.client.product.ProductClient;
 import org.jerry.order.dto.OrderLineResponse;
 import org.jerry.order.dto.OrderRequest;
 import org.jerry.order.dto.OrderResponse;
-import org.jerry.order.dto.product.PurchaseResponse;
+import org.jerry.common.dto.product.PurchaseResponse;
 import org.jerry.order.entity.Order;
 import org.jerry.order.entity.OrderLine;
 import org.jerry.order.entity.QOrder;
@@ -18,7 +18,7 @@ import org.jerry.order.entity.QOrderLine;
 import org.jerry.order.exception.BusinessException;
 import org.jerry.order.exception.OrderNotFoundException;
 import org.jerry.order.kafka.OrderProducer;
-import org.jerry.order.kafka.message.OrderConfirmationMessage;
+import org.jerry.common.dto.order.OrderConfirmationMessage;
 import org.jerry.order.repository.OrderLineRepository;
 import org.jerry.order.repository.OrderRepository;
 import org.jerry.order.util.OrderLineMapper;
@@ -44,7 +44,6 @@ public class OrderService {
     private final OrderMapper orderMapper;
     private final OrderLineMapper orderLineMapper;
     private final CustomerClient customerClient;
-    private final ProductClient productClient;
     private final OrderProducer orderProducer;
     private final EntityManager entityManager;
 
